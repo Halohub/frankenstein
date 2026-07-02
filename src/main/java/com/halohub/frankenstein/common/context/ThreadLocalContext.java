@@ -1,29 +1,25 @@
 package com.halohub.frankenstein.common.context;
 
-import com.halohub.frankenstein.pojo.UserInfoContextBo;
-
 /**
  * Request-scoped ThreadLocal holder for user identity and other per-request state.
  */
 public final class ThreadLocalContext {
 
-    public static ThreadLocal<UserInfoContextBo> threadLocal = new ThreadLocal<>();
+    private static final ThreadLocal<Object> HOLDER = new ThreadLocal<>();
 
-    public static void setThreadLocal(UserInfoContextBo userInfoContextBo) {
-        threadLocal.set(userInfoContextBo);
+    private ThreadLocalContext() {
     }
 
-    public static UserInfoContextBo getUserInfoContextBo(){
-        return threadLocal.get();
+    @SuppressWarnings("unchecked")
+    public static <T> T get() {
+        return (T) HOLDER.get();
     }
 
-    public static void remove(){
-        threadLocal.remove();
+    public static <T> void set(T value) {
+        HOLDER.set(value);
     }
 
-    public static Long getCurrentUserId(){
-        UserInfoContextBo userInfoContextBo = threadLocal.get();
-        return userInfoContextBo!= null? userInfoContextBo.getUserId() : null;
+    public static void clear() {
+        HOLDER.remove();
     }
-
 }

@@ -9,7 +9,6 @@ import org.aspectj.lang.annotation.Aspect;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-import com.halohub.frankenstein.common.context.ThreadLocalContext;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -42,24 +41,24 @@ public class RequestLogAspect {
             Map<String, Object> paramMap = buildParameterMap(paramNames, args);
             log.info("========================== request start ==========================");
             log.info("Controller: {}", className);
-            log.info("方法: {}", methodName);
+            log.info("Method: {}", methodName);
             if (request != null) {
                 log.info("URL: {} {}", request.getMethod(), request.getRequestURI());
                 if (LOG_CLIENT_IP) {
-                    log.info("IP地址: {}", getClientIP(request));
+                    log.info("Client IP: {}", getClientIP(request));
                 }
-                Long userId = ThreadLocalContext.getCurrentUserId();
+                Long userId = com.halohub.frankenstein.common.context.RequestContextHelper.getCurrentUserId();
                 if (userId != null) {
-                    log.info("用户ID: {}", userId);
+                    log.info("User ID: {}", userId);
                 }
             }
             if (LOG_PARAMETERS) {
-                log.info("参数: {}", formatParameters(paramMap));
+                log.info("Parameters: {}", formatParameters(paramMap));
             }
             Object result = joinPoint.proceed();
             if (LOG_RESPONSE_TIME) {
                 long duration = System.currentTimeMillis() - startTime;
-                log.info("响应时间: {}ms", duration);
+                log.info("Response time: {}ms", duration);
             }
             log.info("========================== request end ==========================");
             

@@ -17,6 +17,10 @@ public class BusinessException extends BaseException {
         super(errorCode);
     }
 
+    public BusinessException(ErrorCode errorCode, Object... messageArgs) {
+        super(errorCode, messageArgs);
+    }
+
     public BusinessException(ErrorCode errorCode, String customMessage) {
         super(errorCode, customMessage);
     }
