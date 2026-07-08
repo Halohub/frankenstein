@@ -3,6 +3,7 @@ package com.halohub.frankenstein.config;
 import cn.dev33.satoken.SaManager;
 import cn.dev33.satoken.config.SaTokenConfig;
 import cn.dev33.satoken.interceptor.SaInterceptor;
+import cn.dev33.satoken.router.SaHttpMethod;
 import cn.dev33.satoken.router.SaRouter;
 import com.halohub.frankenstein.interceptor.RequestContextInterceptor;
 import com.halohub.frankenstein.satoken.StpAdminUtil;
@@ -18,14 +19,18 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class SaTokenConfiguration implements WebMvcConfigurer {
 
     private final RequestContextInterceptor requestContextInterceptor;
+    private final SaTokenConfig saTokenConfig;
 
-    public SaTokenConfiguration(RequestContextInterceptor requestContextInterceptor) {
+    public SaTokenConfiguration(RequestContextInterceptor requestContextInterceptor,
+                                SaTokenConfig saTokenConfig) {
         this.requestContextInterceptor = requestContextInterceptor;
+        this.saTokenConfig = saTokenConfig;
     }
 
     @PostConstruct
     public void registerStpLogic() {
-        SaTokenConfig global = SaManager.getConfig();
+        // 使用 Spring 已绑定 yml 的 SaTokenConfig，确保 token-prefix 等已生效
+        SaTokenConfig global = saTokenConfig;
 
         SaTokenConfig adminConfig = copyConfig(global);
         adminConfig.setMaxLoginCount(1);
