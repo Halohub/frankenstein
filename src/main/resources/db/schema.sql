@@ -134,6 +134,72 @@ CREATE TABLE IF NOT EXISTS sys_member_role (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Many-to-many mapping between member accounts and roles';
 
 -- ---------------------------------------------------------------------------
+-- Mall: product catalog (category / SPU / SKU)
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS biz_category (
+    id          BIGINT       NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
+    parent_id   BIGINT       NOT NULL DEFAULT 0      COMMENT 'Parent category id, 0=root',
+    name        VARCHAR(64)  NOT NULL                COMMENT 'Category name',
+    icon        VARCHAR(128) DEFAULT NULL           COMMENT 'Icon URL or identifier',
+    sort        INT          NOT NULL DEFAULT 0      COMMENT 'Display sort order, ascending',
+    level       INT          NOT NULL DEFAULT 1      COMMENT 'Tree level starting from 1',
+    status      TINYINT      NOT NULL DEFAULT 1      COMMENT '0=disabled, 1=active',
+    create_time DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Record creation time',
+    update_time DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Record last update time',
+    deleted     TINYINT      NOT NULL DEFAULT 0      COMMENT 'Logical delete flag: 0=not deleted, 1=deleted',
+    PRIMARY KEY (id),
+    KEY idx_category_parent (parent_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Product category tree';
+
+CREATE TABLE IF NOT EXISTS biz_spu (
+    id          BIGINT         NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
+    category_id BIGINT         NOT NULL                COMMENT 'Foreign key to biz_category.id',
+    title       VARCHAR(128)   NOT NULL                COMMENT 'Product title',
+    subtitle    VARCHAR(255)   DEFAULT NULL            COMMENT 'Product subtitle',
+    description TEXT           DEFAULT NULL            COMMENT 'Product description',
+    main_image  VARCHAR(512)   DEFAULT NULL            COMMENT 'Main image URL',
+    min_price   DECIMAL(12, 2) NOT NULL DEFAULT 0.00   COMMENT 'Minimum SKU price (denormalized)',
+    max_price   DECIMAL(12, 2) NOT NULL DEFAULT 0.00   COMMENT 'Maximum SKU price (denormalized)',
+    status      TINYINT        NOT NULL DEFAULT 0      COMMENT '0=off shelf, 1=on shelf',
+    create_time DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Record creation time',
+    update_time DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Record last update time',
+    deleted     TINYINT        NOT NULL DEFAULT 0      COMMENT 'Logical delete flag: 0=not deleted, 1=deleted',
+    PRIMARY KEY (id),
+    KEY idx_spu_category (category_id),
+    KEY idx_spu_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Standard Product Unit (SPU)';
+
+CREATE TABLE IF NOT EXISTS biz_sku (
+    id          BIGINT         NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
+    spu_id      BIGINT         NOT NULL                COMMENT 'Foreign key to biz_spu.id',
+    sku_code    VARCHAR(64)    NOT NULL                COMMENT 'SKU code, unique',
+    spec_json   VARCHAR(512)   DEFAULT NULL            COMMENT 'Spec attributes JSON, e.g. {"color":"black"}',
+    price       DECIMAL(12, 2) NOT NULL                COMMENT 'Sale price',
+    stock       INT            NOT NULL DEFAULT 0      COMMENT 'Available stock',
+    image       VARCHAR(512)   DEFAULT NULL            COMMENT 'SKU image URL',
+    status      TINYINT        NOT NULL DEFAULT 1      COMMENT '0=disabled, 1=active',
+    create_time DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Record creation time',
+    update_time DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Record last update time',
+    deleted     TINYINT        NOT NULL DEFAULT 0      COMMENT 'Logical delete flag: 0=not deleted, 1=deleted',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_sku_code (sku_code),
+    KEY idx_sku_spu (spu_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Stock Keeping Unit (SKU)';
+
+CREATE TABLE IF NOT EXISTS biz_cart_item (
+    id          BIGINT   NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
+    member_id   BIGINT   NOT NULL                COMMENT 'Foreign key to sys_member.id',
+    sku_id      BIGINT   NOT NULL                COMMENT 'Foreign key to biz_sku.id',
+    quantity    INT      NOT NULL DEFAULT 1      COMMENT 'Quantity in cart',
+    selected    TINYINT  NOT NULL DEFAULT 1      COMMENT 'Selected for checkout: 0=no, 1=yes',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Record creation time',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Record last update time',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_cart_member_sku (member_id, sku_id),
+    KEY idx_cart_member (member_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Member shopping cart items';
+
+-- ---------------------------------------------------------------------------
 -- Seed data
 -- ---------------------------------------------------------------------------
 INSERT IGNORE INTO sys_role (id, role_code, role_name, role_scope, remark) VALUES
@@ -178,7 +244,29 @@ INSERT IGNORE INTO sys_permission
 (54, 'admin:member:remove',          'Remove Member',    'API',    41, NULL,     NULL,                      NULL,          0, 0,  '/admin/api_v1/member/*',           'DELETE'),
 (55, 'admin:member:promote',         'Promote Member',   'API',    41, NULL,     NULL,                      NULL,          0, 0,  '/admin/api_v1/member/*/promote',   'POST'),
 (3,  'member:auth:info',             'Member Auth Info', 'API',    0,  NULL,     NULL,                      NULL,          0, 0,  '/user/api_v1/auth/info',           'GET'),
-(4,  'member:order:view',            'View Orders',      'API',    0,  NULL,     NULL,                      NULL,          0, 0,  '/user/api_v1/order/list',          'GET');
+(4,  'member:order:view',            'View Orders',      'API',    0,  NULL,     NULL,                      NULL,          0, 0,  '/user/api_v1/order/list',          'GET'),
+(5,  'member:product:category:tree', 'Category Tree',    'API',    0,  NULL,     NULL,                      NULL,          0, 0,  '/user/api_v1/category/tree',       'GET'),
+(6,  'member:product:spu:list',       'SPU List',         'API',    0,  NULL,     NULL,                      NULL,          0, 0,  '/user/api_v1/product/spu/list',    'GET'),
+(7,  'member:product:spu:detail',     'SPU Detail',       'API',    0,  NULL,     NULL,                      NULL,          0, 0,  '/user/api_v1/product/spu/*',       'GET'),
+(8,  'member:product:sku:detail',     'SKU Detail',       'API',    0,  NULL,     NULL,                      NULL,          0, 0,  '/user/api_v1/product/sku/*',       'GET'),
+(9,  'member:cart:view',              'View Cart',        'API',    0,  NULL,     NULL,                      NULL,          0, 0,  '/user/api_v1/cart/list',           'GET'),
+(10, 'member:cart:add',               'Add Cart Item',    'API',    0,  NULL,     NULL,                      NULL,          0, 0,  '/user/api_v1/cart/item',           'POST'),
+(11, 'member:cart:update',            'Update Cart Item', 'API',    0,  NULL,     NULL,                      NULL,          0, 0,  '/user/api_v1/cart/item/*',         'PUT'),
+(12, 'member:cart:remove',            'Remove Cart Item', 'API',    0,  NULL,     NULL,                      NULL,          0, 0,  '/user/api_v1/cart/item/*',         'DELETE'),
+(13, 'member:cart:select',            'Select Cart Items','API',    0,  NULL,     NULL,                      NULL,          0, 0,  '/user/api_v1/cart/select',         'PUT'),
+(60, 'admin:product',                 'Products',         'MENU',   0,  '/product', '#',                     'ep:goods',    0, 30, NULL,                               NULL),
+(61, 'admin:product:category',        'Categories',       'MENU',   60, 'category', 'views/product/category/index', 'ep:menu', 0, 1, NULL,                          NULL),
+(62, 'admin:product:spu',             'SPU List',         'MENU',   60, 'spu',    'views/product/spu/index', 'ep:goods-filled', 0, 2, NULL,                        NULL),
+(63, 'admin:product:category:tree',   'Category Tree',    'API',    61, NULL,     NULL,                      NULL,          0, 0,  '/admin/api_v1/category/tree',      'GET'),
+(64, 'admin:product:category:create', 'Create Category',  'API',    61, NULL,     NULL,                      NULL,          0, 0,  '/admin/api_v1/category',             'POST'),
+(65, 'admin:product:category:update', 'Update Category',  'API',    61, NULL,     NULL,                      NULL,          0, 0,  '/admin/api_v1/category/*',         'PUT'),
+(66, 'admin:product:category:remove', 'Remove Category',  'API',    61, NULL,     NULL,                      NULL,          0, 0,  '/admin/api_v1/category/*',         'DELETE'),
+(67, 'admin:product:spu:list',       'List SPU',         'API',    62, NULL,     NULL,                      NULL,          0, 0,  '/admin/api_v1/product/spu/list',   'GET'),
+(68, 'admin:product:spu:detail',     'SPU Detail',       'API',    62, NULL,     NULL,                      NULL,          0, 0,  '/admin/api_v1/product/spu/*',      'GET'),
+(69, 'admin:product:spu:create',     'Create SPU',       'API',    62, NULL,     NULL,                      NULL,          0, 0,  '/admin/api_v1/product/spu',        'POST'),
+(70, 'admin:product:spu:update',     'Update SPU',       'API',    62, NULL,     NULL,                      NULL,          0, 0,  '/admin/api_v1/product/spu/*',      'PUT'),
+(71, 'admin:product:spu:remove',     'Remove SPU',       'API',    62, NULL,     NULL,                      NULL,          0, 0,  '/admin/api_v1/product/spu/*',      'DELETE'),
+(72, 'admin:product:spu:status',     'Update SPU Status','API',   62, NULL,     NULL,                      NULL,          0, 0,  '/admin/api_v1/product/spu/*/status','PUT');
 
 INSERT IGNORE INTO sys_i18n_message (ref_type, ref_id, locale, field_name, field_value) VALUES
 ('PERMISSION', 10, 'zh', 'perm_name', '系统管理'),
@@ -190,7 +278,13 @@ INSERT IGNORE INTO sys_i18n_message (ref_type, ref_id, locale, field_name, field
 ('PERMISSION', 40, 'zh', 'perm_name', '会员管理'),
 ('PERMISSION', 40, 'ja', 'perm_name', '会員管理'),
 ('PERMISSION', 41, 'zh', 'perm_name', '会员列表'),
-('PERMISSION', 41, 'ja', 'perm_name', '会員一覧');
+('PERMISSION', 41, 'ja', 'perm_name', '会員一覧'),
+('PERMISSION', 60, 'zh', 'perm_name', '商品管理'),
+('PERMISSION', 60, 'ja', 'perm_name', '商品管理'),
+('PERMISSION', 61, 'zh', 'perm_name', '分类管理'),
+('PERMISSION', 61, 'ja', 'perm_name', 'カテゴリ管理'),
+('PERMISSION', 62, 'zh', 'perm_name', '商品列表'),
+('PERMISSION', 62, 'ja', 'perm_name', '商品一覧');
 
 INSERT IGNORE INTO sys_role_permission (role_id, permission_id)
 SELECT 1, id FROM sys_permission WHERE perm_code LIKE 'admin:%';
