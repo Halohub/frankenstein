@@ -33,6 +33,7 @@ public enum CommonErrorCode implements ErrorCode {
 
     BUSINESS_EXCEPTION(3001),
     NO_CORRESPONDING_DATA(3002),
+    INSUFFICIENT_STOCK(3003),
     CODE_EXPIRED(3012),
     VERIFY_CODE_ERROR(3015),
 
