@@ -199,6 +199,72 @@ CREATE TABLE IF NOT EXISTS biz_cart_item (
     KEY idx_cart_member (member_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Member shopping cart items';
 
+CREATE TABLE IF NOT EXISTS biz_order (
+    id               BIGINT         NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
+    order_no         VARCHAR(32)    NOT NULL                COMMENT 'Business order number, unique',
+    member_id        BIGINT         NOT NULL                COMMENT 'Foreign key to sys_member.id',
+    status           VARCHAR(16)    NOT NULL                COMMENT 'PENDING_PAY, PAID, SHIPPED, COMPLETED, CANCELLED',
+    source           VARCHAR(16)    NOT NULL                COMMENT 'CART or DIRECT',
+    total_amount     DECIMAL(12, 2) NOT NULL DEFAULT 0.00   COMMENT 'Items subtotal',
+    freight_amount   DECIMAL(12, 2) NOT NULL DEFAULT 0.00   COMMENT 'Freight amount',
+    pay_amount       DECIMAL(12, 2) NOT NULL DEFAULT 0.00   COMMENT 'Amount to pay',
+    currency         VARCHAR(8)     NOT NULL DEFAULT 'CNY'  COMMENT 'Currency code',
+    receiver_name    VARCHAR(64)    NOT NULL                COMMENT 'Receiver name',
+    receiver_phone   VARCHAR(20)    NOT NULL                COMMENT 'Receiver phone',
+    receiver_address VARCHAR(512)   NOT NULL                COMMENT 'Receiver address',
+    remark           VARCHAR(255)   DEFAULT NULL            COMMENT 'Buyer remark',
+    pay_time         DATETIME       DEFAULT NULL            COMMENT 'Payment success time',
+    expire_time      DATETIME       DEFAULT NULL            COMMENT 'Payment deadline for PENDING_PAY',
+    cancel_time      DATETIME       DEFAULT NULL            COMMENT 'Cancellation time',
+    complete_time    DATETIME       DEFAULT NULL            COMMENT 'Order completion time',
+    create_time      DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Record creation time',
+    update_time      DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Record last update time',
+    deleted          TINYINT        NOT NULL DEFAULT 0      COMMENT 'Logical delete flag',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_order_no (order_no),
+    KEY idx_order_member (member_id),
+    KEY idx_order_status_expire (status, expire_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Member orders';
+
+CREATE TABLE IF NOT EXISTS biz_order_item (
+    id            BIGINT         NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
+    order_id      BIGINT         NOT NULL                COMMENT 'Foreign key to biz_order.id',
+    spu_id        BIGINT         NOT NULL                COMMENT 'SPU id snapshot reference',
+    sku_id        BIGINT         NOT NULL                COMMENT 'SKU id snapshot reference',
+    product_title VARCHAR(128)   NOT NULL                COMMENT 'Product title snapshot',
+    sku_code      VARCHAR(64)    NOT NULL                COMMENT 'SKU code snapshot',
+    sku_spec      VARCHAR(512)   DEFAULT NULL            COMMENT 'SKU spec JSON snapshot',
+    unit_price    DECIMAL(12, 2) NOT NULL                COMMENT 'Unit price snapshot',
+    quantity      INT            NOT NULL                COMMENT 'Quantity',
+    subtotal      DECIMAL(12, 2) NOT NULL                COMMENT 'Line subtotal',
+    create_time   DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Record creation time',
+    PRIMARY KEY (id),
+    KEY idx_order_item_order (order_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Order line items';
+
+CREATE TABLE IF NOT EXISTS biz_payment (
+    id              BIGINT         NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
+    payment_no      VARCHAR(32)    NOT NULL                COMMENT 'Payment number, unique',
+    order_id        BIGINT         NOT NULL                COMMENT 'Foreign key to biz_order.id',
+    order_no        VARCHAR(32)    NOT NULL                COMMENT 'Order number snapshot',
+    member_id       BIGINT         NOT NULL                COMMENT 'Foreign key to sys_member.id',
+    channel         VARCHAR(16)    NOT NULL                COMMENT 'MOCK, ALIPAY, WXPAY, STRIPE',
+    amount          DECIMAL(12, 2) NOT NULL                COMMENT 'Payment amount',
+    currency        VARCHAR(8)     NOT NULL DEFAULT 'CNY'  COMMENT 'Currency code',
+    status          VARCHAR(16)    NOT NULL                COMMENT 'PENDING, SUCCESS, FAILED, CLOSED',
+    third_party_no  VARCHAR(64)    DEFAULT NULL            COMMENT 'Third-party transaction id',
+    client_payload  VARCHAR(1024)  DEFAULT NULL            COMMENT 'Client payment payload JSON',
+    callback_raw    TEXT           DEFAULT NULL            COMMENT 'Callback raw body',
+    pay_time        DATETIME       DEFAULT NULL            COMMENT 'Payment success time',
+    expire_time     DATETIME       DEFAULT NULL            COMMENT 'Payment expire time',
+    create_time     DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Record creation time',
+    update_time     DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Record last update time',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_payment_no (payment_no),
+    KEY idx_payment_order (order_id),
+    KEY idx_payment_member (member_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Order payments';
+
 -- ---------------------------------------------------------------------------
 -- Seed data
 -- ---------------------------------------------------------------------------
@@ -245,6 +311,10 @@ INSERT IGNORE INTO sys_permission
 (55, 'admin:member:promote',         'Promote Member',   'API',    41, NULL,     NULL,                      NULL,          0, 0,  '/admin/api_v1/member/*/promote',   'POST'),
 (3,  'member:auth:info',             'Member Auth Info', 'API',    0,  NULL,     NULL,                      NULL,          0, 0,  '/user/api_v1/auth/info',           'GET'),
 (4,  'member:order:view',            'View Orders',      'API',    0,  NULL,     NULL,                      NULL,          0, 0,  '/user/api_v1/order/list',          'GET'),
+(14, 'member:order:detail',          'Order Detail',     'API',    0,  NULL,     NULL,                      NULL,          0, 0,  '/user/api_v1/order/*',             'GET'),
+(15, 'member:order:create',          'Create Order',     'API',    0,  NULL,     NULL,                      NULL,          0, 0,  '/user/api_v1/order',               'POST'),
+(16, 'member:order:cancel',          'Cancel Order',     'API',    0,  NULL,     NULL,                      NULL,          0, 0,  '/user/api_v1/order/*/cancel',      'POST'),
+(17, 'member:payment:pay',           'Pay Order',        'API',    0,  NULL,     NULL,                      NULL,          0, 0,  '/user/api_v1/payment/*',           'POST'),
 (5,  'member:product:category:tree', 'Category Tree',    'API',    0,  NULL,     NULL,                      NULL,          0, 0,  '/user/api_v1/category/tree',       'GET'),
 (6,  'member:product:spu:list',       'SPU List',         'API',    0,  NULL,     NULL,                      NULL,          0, 0,  '/user/api_v1/product/spu/list',    'GET'),
 (7,  'member:product:spu:detail',     'SPU Detail',       'API',    0,  NULL,     NULL,                      NULL,          0, 0,  '/user/api_v1/product/spu/*',       'GET'),

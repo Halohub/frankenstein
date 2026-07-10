@@ -60,3 +60,7 @@ frankenstein:
     login-lock-minutes: 15
     member-max-devices-normal: 3
     member-max-devices-vip: 10
+  order:
+    pay-timeout-minutes: 30
+    default-freight-amount: 0
+    default-currency: CNY
