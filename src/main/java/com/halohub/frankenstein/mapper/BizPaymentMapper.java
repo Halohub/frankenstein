@@ -6,6 +6,8 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.List;
+
 @Mapper
 public interface BizPaymentMapper extends BaseMapper<BizPayment> {
 
@@ -15,4 +17,7 @@ public interface BizPaymentMapper extends BaseMapper<BizPayment> {
     @Select("SELECT * FROM biz_payment WHERE order_id = #{orderId} AND status = 'PENDING' " +
             "ORDER BY id DESC LIMIT 1")
     BizPayment findPendingByOrderId(@Param("orderId") Long orderId);
+
+    @Select("SELECT * FROM biz_payment WHERE order_id = #{orderId} ORDER BY id DESC")
+    List<BizPayment> listByOrderId(@Param("orderId") Long orderId);
 }

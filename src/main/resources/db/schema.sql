@@ -336,7 +336,12 @@ INSERT IGNORE INTO sys_permission
 (69, 'admin:product:spu:create',     'Create SPU',       'API',    62, NULL,     NULL,                      NULL,          0, 0,  '/admin/api_v1/product/spu',        'POST'),
 (70, 'admin:product:spu:update',     'Update SPU',       'API',    62, NULL,     NULL,                      NULL,          0, 0,  '/admin/api_v1/product/spu/*',      'PUT'),
 (71, 'admin:product:spu:remove',     'Remove SPU',       'API',    62, NULL,     NULL,                      NULL,          0, 0,  '/admin/api_v1/product/spu/*',      'DELETE'),
-(72, 'admin:product:spu:status',     'Update SPU Status','API',   62, NULL,     NULL,                      NULL,          0, 0,  '/admin/api_v1/product/spu/*/status','PUT');
+(72, 'admin:product:spu:status',     'Update SPU Status','API',   62, NULL,     NULL,                      NULL,          0, 0,  '/admin/api_v1/product/spu/*/status','PUT'),
+(73, 'admin:order',                  'Orders',           'MENU',   0,  '/order', '#',                     'ep:document', 0, 40, NULL,                               NULL),
+(74, 'admin:order:list',             'Order List',       'MENU',   73, 'list',   'views/order/list/index', 'ep:list',     0, 1,  NULL,                               NULL),
+(75, 'admin:order:view',             'View Order',       'BUTTON', 74, NULL,     NULL,                      NULL,          0, 1,  NULL,                               NULL),
+(76, 'admin:order:query',            'Query Orders',     'API',    74, NULL,     NULL,                      NULL,          0, 0,  '/admin/api_v1/order/list',         'GET'),
+(77, 'admin:order:detail',           'Order Detail',     'API',    74, NULL,     NULL,                      NULL,          0, 0,  '/admin/api_v1/order/*',            'GET');
 
 INSERT IGNORE INTO sys_i18n_message (ref_type, ref_id, locale, field_name, field_value) VALUES
 ('PERMISSION', 10, 'zh', 'perm_name', '系统管理'),
@@ -354,7 +359,11 @@ INSERT IGNORE INTO sys_i18n_message (ref_type, ref_id, locale, field_name, field
 ('PERMISSION', 61, 'zh', 'perm_name', '分类管理'),
 ('PERMISSION', 61, 'ja', 'perm_name', 'カテゴリ管理'),
 ('PERMISSION', 62, 'zh', 'perm_name', '商品列表'),
-('PERMISSION', 62, 'ja', 'perm_name', '商品一覧');
+('PERMISSION', 62, 'ja', 'perm_name', '商品一覧'),
+('PERMISSION', 73, 'zh', 'perm_name', '订单管理'),
+('PERMISSION', 73, 'ja', 'perm_name', '注文管理'),
+('PERMISSION', 74, 'zh', 'perm_name', '订单列表'),
+('PERMISSION', 74, 'ja', 'perm_name', '注文一覧');
 
 INSERT IGNORE INTO sys_role_permission (role_id, permission_id)
 SELECT 1, id FROM sys_permission WHERE perm_code LIKE 'admin:%';
