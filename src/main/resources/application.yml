@@ -2,6 +2,10 @@ server:
   port: 9010
 
 spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     type: com.zaxxer.hikari.HikariDataSource
@@ -64,3 +68,24 @@ frankenstein:
     pay-timeout-minutes: 30
     default-freight-amount: 0
     default-currency: CNY
+  file:
+    max-size-mb: 10
+    allowed-extensions: jpg,jpeg,png,gif,webp,pdf,mp4,zip,mp3,wav,ogg,m4a,aac,webm
+    signed-url-expire-seconds: 3600
+    aliyun:
+      enabled: false
+      endpoint: oss-cn-hangzhou.aliyuncs.com
+      access-key-id: your-access-key-id
+      access-key-secret: your-access-key-secret
+      bucket: your-bucket
+      domain: https://your-bucket.oss-cn-hangzhou.aliyuncs.com
+      path-prefix: frankenstein/
+      private-access: false
+    qiniu:
+      enabled: false
+      access-key: your-access-key
+      secret-key: your-secret-key
+      bucket: your-bucket
+      domain: https://cdn.example.com
+      path-prefix: frankenstein/
+      private-access: false

@@ -266,6 +266,27 @@ CREATE TABLE IF NOT EXISTS biz_payment (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Order payments';
 
 -- ---------------------------------------------------------------------------
+-- Uploaded file metadata (standalone file module)
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS biz_file (
+    id              BIGINT       NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
+    original_name   VARCHAR(255) NOT NULL                COMMENT 'Original filename',
+    object_key      VARCHAR(512) NOT NULL                COMMENT 'OSS object key',
+    url             VARCHAR(1024) NOT NULL               COMMENT 'Last known access URL',
+    mime_type       VARCHAR(128) DEFAULT NULL           COMMENT 'MIME type',
+    size_bytes      BIGINT       NOT NULL DEFAULT 0      COMMENT 'File size in bytes',
+    provider        VARCHAR(16)  NOT NULL                COMMENT 'ALIYUN or QINIU',
+    biz_type        VARCHAR(32)  DEFAULT NULL            COMMENT 'Optional business category',
+    create_time     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Record creation time',
+    update_time     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Record last update time',
+    deleted         TINYINT      NOT NULL DEFAULT 0     COMMENT 'Logical delete flag: 0=not deleted, 1=deleted',
+    PRIMARY KEY (id),
+    KEY idx_file_provider (provider),
+    KEY idx_file_biz_type (biz_type),
+    KEY idx_file_original_name (original_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Uploaded file metadata';
+
+-- ---------------------------------------------------------------------------
 -- Seed data
 -- ---------------------------------------------------------------------------
 INSERT INTO sys_role (id, role_code, role_name, role_scope, remark) VALUES
