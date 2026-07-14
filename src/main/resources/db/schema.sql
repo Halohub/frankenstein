@@ -287,6 +287,40 @@ CREATE TABLE IF NOT EXISTS biz_file (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Uploaded file metadata';
 
 -- ---------------------------------------------------------------------------
+-- IM: member × customer-service sessions
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS biz_chat_session (
+    id                 BIGINT       NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
+    member_id          BIGINT       NOT NULL                COMMENT 'Member id (sys_member.id)',
+    admin_id           BIGINT       DEFAULT NULL            COMMENT 'Assigned admin id, null until first reply',
+    status             VARCHAR(16)  NOT NULL DEFAULT 'OPEN' COMMENT 'OPEN or CLOSED',
+    last_message       VARCHAR(512) DEFAULT NULL            COMMENT 'Last message preview',
+    last_msg_type      VARCHAR(16)  DEFAULT NULL            COMMENT 'TEXT or IMAGE',
+    last_message_time  DATETIME     DEFAULT NULL            COMMENT 'Last message time',
+    member_unread      INT          NOT NULL DEFAULT 0      COMMENT 'Unread count for member',
+    admin_unread       INT          NOT NULL DEFAULT 0      COMMENT 'Unread count for admin desk',
+    create_time        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Record creation time',
+    update_time        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Record last update time',
+    PRIMARY KEY (id),
+    KEY idx_chat_session_member (member_id, status),
+    KEY idx_chat_session_admin (admin_id, status),
+    KEY idx_chat_session_last_time (last_message_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='IM sessions between member and customer service';
+
+CREATE TABLE IF NOT EXISTS biz_chat_message (
+    id           BIGINT       NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
+    session_id   BIGINT       NOT NULL                COMMENT 'biz_chat_session.id',
+    sender_type  VARCHAR(16)  NOT NULL                COMMENT 'MEMBER or ADMIN',
+    sender_id    BIGINT       NOT NULL                COMMENT 'Sender account id',
+    msg_type     VARCHAR(16)  NOT NULL DEFAULT 'TEXT' COMMENT 'TEXT or IMAGE',
+    content      VARCHAR(2048) NOT NULL               COMMENT 'Text body or image URL',
+    read_flag    TINYINT      NOT NULL DEFAULT 0      COMMENT '0=unread by peer, 1=read',
+    create_time  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Record creation time',
+    PRIMARY KEY (id),
+    KEY idx_chat_msg_session (session_id, id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='IM messages';
+
+-- ---------------------------------------------------------------------------
 -- Seed data
 -- ---------------------------------------------------------------------------
 INSERT INTO sys_role (id, role_code, role_name, role_scope, remark) VALUES
